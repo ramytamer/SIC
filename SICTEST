@@ -1,0 +1,60 @@
+TEST     START   1000              
+FIRST    STL     RETADR            
+CLOOP    JSUB    RDREC             
+         LDA     LENGTH            
+         COMP    ONE               
+         JEQ     ENDFIL            
+         JSUB    WRREC             
+         J       CLOOP             
+ENDFIL   LDA    =C'EOF'            
+         STA     BUFFER            
+         LDA     THREE             
+         STA     LENGTH            
+         JSUB    WRREC             
+         LDL     RETADR            
+         RSUB                      
+         LTORG              
+*       =C'EOF'                    
+THREE    WORD    3                 
+ZERO     WORD    0                 
+ONE      WORD    1                 
+FIVE     WORD    5                 
+RETADR   RESW    1                 
+LENGTH   RESW    1                 
+BUFFER   RESB    4096              
+.                                  
+.       SUBROUTINE TO READ RECORD INTO BUFFER
+.                                  
+RDREC    LDX     ZERO              
+         LDA     ZERO              
+RLOOP    TD     =X'F3'             
+         JEQ     RLOOP             
+         RD     =X'F3'             
+         COMP    FIVE              
+         JLT     EXIT              
+         STCH    BUFFER            
+         TIX     MAXLEN            
+         JLT     RLOOP             
+EXIT     STCH    BUFFER            
+         STX     LENGTH            
+         LDA     LENGTH            
+         ADD     ONE               
+         STA     LENGTH            
+         RSUB                      
+         LTORG                     
+*       =X'F3'                     
+LEN      WORD    4096              
+MAXLEN   EQU     LEN               
+.                                  
+.       SUBROUTINE TO WRITE RECORD FROM BUFFER
+.                                  
+WRREC    LDX     ZERO              
+WLOOP    TD     =X'06'             
+         JEQ     WLOOP             
+         LDCH    BUFFER            
+         WD     =X'06'             
+         TIX     LENGTH            
+         JLT     WLOOP             
+         RSUB                      
+*       =X'06'                     
+         END     FIRST  

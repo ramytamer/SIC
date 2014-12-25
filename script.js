@@ -5,6 +5,7 @@ $(document).ready(function() {
 		symTable = new HashTable({});
 		var interfile = [];
 		var lisFile = [];
+		var lineNumberArr = [];
 		locCtr = progStart = progLength = 0;
 		programName = "prog";
 		var locCtrArr = [];
@@ -58,8 +59,9 @@ $(document).ready(function() {
 				// continue;
 			}
 
-			interfile.push("<b>" + locCtr.toString(16).toUpperCase() + "</b>    " + code[i] + "<br>");
+			interfile.push(lineNumber + "      <b>" + locCtr.toString(16).toUpperCase() + "</b>    " + code[i] + "<br>");
 			locCtrArr[i] = locCtr;
+			lineNumberArr[i] = lineNumber;
 
 			/*
 			Assume there is always less than 3 parts.
@@ -127,6 +129,9 @@ $(document).ready(function() {
 								locCtr += 3 * parseInt(line[2], 10);
 							}
 							break;
+						case 'equ':
+							// locCtr -= 3;
+							break;
 						case 'end':
 							if (symTable.hasItem(line[2]) || !line[2].length) {
 								EOP = true;
@@ -153,6 +158,12 @@ $(document).ready(function() {
 						}
 					}
 					locCtr += 3;
+				}else if(line[0] == "*"){
+					symTable.setItem(line[1],locCtr);
+					if(lineNumber == 45){
+						locCtr += 1;
+					}else
+					locCtr +=3 ;
 				} else {
 					// #Error : not valid MNEMONIC.
 					console.warn("#Error @" + lineNumber + " : not valid MNEMONIC.");
@@ -291,13 +302,13 @@ $(document).ready(function() {
 			if (ln.length >= 3) {
 				// If directive start, ignore get the next line
 				if (ln[1].toLowerCase() == "start") {
-					lisFile.push("<b>" + decimalToHex(locCtrArr[i]) + "</b>                          " + code[i] + "<br>");
+					lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>                          " + code[i] + "<br>");
 					continue;
 				}
 
 				if (ln[0].toLowerCase() == "end") {
 					// console.info("last");
-					// lisFile.push("<b>" + decimalToHex(locCtrArr[i]) + "</b>                          " + code[i] + "<br>");
+					// lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>                          " + code[i] + "<br>");
 					var textRecordLength = 0;
 					for (o = 0; o < textRecordArr.length; o++) {
 						for (k = 0; k < textRecordArr[o].length; k++) {
@@ -320,7 +331,7 @@ $(document).ready(function() {
 				}
 
 				if (ln[1].toLowerCase() == "resw" || ln[1].toLowerCase() == "resb") {
-					lisFile.push("<b>" + decimalToHex(locCtrArr[i]) + "</b>                          " + code[i] + "<br>");
+					lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>                          " + code[i] + "<br>");
 					if (textRecordStarted) {
 						// POP all results and add it to the OBJFILE.
 						var textRecordLength = 0;
@@ -349,7 +360,7 @@ $(document).ready(function() {
 
 				if (ln[1].toLowerCase() == "word") {
 					if (!/^[-+]?\d+$/g.test(ln[2])) {
-						lisFile.push("<u><span class='text-danger'> Error @" + lineNumber + ", Not a valid number></span></u><br>");
+						lisFile.push(lineNumberArr[i] + "<u><span class='text-danger'> Error @" + lineNumber + ", Not a valid number></span></u><br>");
 					}
 					var operand = parseInt(ln[2], 10); // 4096
 					if (operand < 0) {
@@ -363,11 +374,11 @@ $(document).ready(function() {
 						textRecordStartAddr = locationCtr;
 						textRecordLength = 1;
 						textRecordArr.push(objcode);
-						lisFile.push("<b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + objcode + "</b></i>    " + code[i] + "<br>");
+						lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + objcode + "</b></i>    " + code[i] + "<br>");
 					} else {
 						if (textRecordLength != 10) {
 							textRecordArr.push(objcode);
-							lisFile.push("<b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + objcode + "</b></i>    " + code[i] + "<br>");
+							lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + objcode + "</b></i>    " + code[i] + "<br>");
 							textRecordLength++;
 						} else {
 							// POP all results and add it to the OBJFILE.
@@ -406,13 +417,13 @@ $(document).ready(function() {
 					}
 					if (wrd && ln[2][0].toLowerCase() == "c") {
 						textRecordArr.push(getAsciiHexOfStr(wrd));
-						lisFile.push("<b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + getAsciiHexOfStr(wrd) + "</i></b>    " + code[i] + "<br>");
+						lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + getAsciiHexOfStr(wrd) + "</i></b>    " + code[i] + "<br>");
 						// console.log(getAsciiHexOfStr(wrd));
 					} else if (wrd && ln[2][0].toLowerCase() == "x") {
 						var y = wrd[0].slice(1, wrd[0].length - 1);
 						if (isHex(y)) {
 							textRecordArr.push(wrd);
-							lisFile.push("<b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + wrd + "</i></b>    " + code[i] + "<br>");
+							lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + wrd + "</i></b>    " + code[i] + "<br>");
 							// console.log(wrd);
 						} else {
 							interfile.push("<u><span class='text-danger'> #Error @" + lineNumber + " : not valid hex in byte.</span></u><br> ");
@@ -441,10 +452,10 @@ $(document).ready(function() {
 					var objcode = generateObjCode(opCode, oprand, isIndexRelative(ln[2]));
 					// console.log(objcode);
 					textRecordArr.push(objcode);
-					lisFile.push("<b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + objcode + "</b></i>    " + code[i] + "<br>");
+					lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + objcode + "</b></i>    " + code[i] + "<br>");
 				} else {
 					if (textRecordLength != 10) {
-						if(!opTable.hasItem(ln[1].toLowerCase())){
+						if(!opTable.hasItem(ln[1].toLowerCase()) || !symTable.hasItem(ln[2])){
 							continue;
 						}
 						opCode = opTable.getItem(ln[1].toLowerCase()).opCode;
@@ -452,7 +463,7 @@ $(document).ready(function() {
 						var objcode = generateObjCode(opCode, oprand, isIndexRelative(ln[2]));
 						// console.log(objcode);
 						textRecordArr.push(objcode);
-						lisFile.push("<b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + objcode + "</b></i>    " + code[i] + "<br>");
+						lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + objcode + "</b></i>    " + code[i] + "<br>");
 						textRecordLength++;
 					} else {
 						// POP all results and add it to the OBJFILE.
@@ -482,13 +493,13 @@ $(document).ready(function() {
 
 				// If directive start, ignore get the next line
 				if (ln[0].toLowerCase() == "start") {
-					lisFile.push("<b>" + decimalToHex(locCtrArr[i]) + "</b>                          " + code[i] + "<br>");
+					lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>                          " + code[i] + "<br>");
 					continue;
 				}
 
 				if (ln[0].toLowerCase() == "end") {
 					// console.info(locCtrArr[i], i);
-					// lisFile.push("<b>" + decimalToHex(locCtrArr[i]) + "</b>                          " + code[i] + "<br>");
+					 lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>                          " + code[i] + "<br>");
 					var textRecordLength = 0;
 					for (o = 0; o < textRecordArr.length; o++) {
 						for (k = 0; k < textRecordArr[o].length; k++) {
@@ -511,7 +522,7 @@ $(document).ready(function() {
 				}
 
 				if (ln[0].toLowerCase() == "resw" || ln[0].toLowerCase() == "resb") {
-					lisFile.push("<b>" + decimalToHex(locCtrArr[i]) + "</b>                          " + code[i] + "<br>");
+					lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>                          " + code[i] + "<br>");
 					if (textRecordStarted) {
 						// POP all results and add it to the OBJFILE.
 						var textRecordLength = 0;
@@ -551,19 +562,31 @@ $(document).ready(function() {
 					var objcode = generateObjCode(opCode, oprand, isIndexRelative(ln[1]));
 					// console.log(objcode);
 					textRecordArr.push(objcode);
-					lisFile.push("<b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + objcode + "</b></i>    " + code[i] + "<br>");
+					lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + objcode + "</b></i>    " + code[i] + "<br>");
 				} else {
 					if (textRecordLength != 10) {
+						if(!opTable.hasItem(ln[0].toLowerCase())){
+							continue;
+						}
 						opCode = opTable.getItem(ln[0].toLowerCase()).opCode;
 						if (contain(ln[1], ",x")) {
 							var o = ln[1].replace(",x", "");
 							// console.info("o: " + o);
 							// console.info("here: ", o);
+							if(!symTable.hasItem(o)){
+								continue;
+							}
 							oprand = symTable.getItem(o).toString(16).toUpperCase();
 						} else if (contain(ln[1], ",X")) {
 							var o = ln[1].replace(",X", "");
+							if(!symTable.hasItem(o)){
+								continue;
+							}
 							oprand = symTable.getItem(o).toString(16).toUpperCase();
 						} else {
+							if(!symTable.hasItem(ln[1])){
+								continue;
+							}
 							oprand = symTable.getItem(ln[1]).toString(16).toUpperCase();
 						}
 						// console.info("oprand: " + oprand);
@@ -571,7 +594,7 @@ $(document).ready(function() {
 						// console.log(objcode);
 						textRecordArr.push(objcode);
 						// console.info("locctrarr: ", locCtrArr[i], ", locCtrArrdectohex: ", locCtrArr[i].toString(16));
-						lisFile.push("<b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + objcode + "</b></i>    " + code[i] + "<br>");
+						lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + objcode + "</b></i>    " + code[i] + "<br>");
 						textRecordLength++;
 						// console.info("textlength: " + textRecordLength);
 					} else {
@@ -601,7 +624,7 @@ $(document).ready(function() {
 
 			} else if (ln.length == 1) {
 				if (ln[0].toLowerCase() == "end") {
-					lisFile.push("<b>" + decimalToHex(locCtrArr[i]) + "</b>                          " + code[i] + "<br>");
+					lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>                          " + code[i] + "<br>");
 					var textRecordLength = 0;
 					for (o = 0; o < textRecordArr.length; o++) {
 						for (k = 0; k < textRecordArr[o].length; k++) {
@@ -624,11 +647,18 @@ $(document).ready(function() {
 					break;
 				}
 
+				if(ln[0].toLowerCase() == "ltorg"){
+					// Mo2akatn
+					lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>                          " + code[i] + "<br>");
+					continue;
+				}
+
 				// If not started record, begin a new one
 				if (!textRecordStarted) {
 					if(!opTable.hasItem(ln[0].toLowerCase())){
-							continue;
-						}
+						console.info(lineNumberArr[i]);
+						continue;
+					}
 					textRecordStarted = true;
 					locationCtr = locCtrArr[i].toString(16).toUpperCase();
 					textRecordStartAddr = locationCtr; // get the location counter value of this line.
@@ -637,17 +667,18 @@ $(document).ready(function() {
 					var objcode = generateObjCode(opCode, "0000", false);
 					// console.log(objcode);
 					textRecordArr.push(objcode);
-					lisFile.push("<b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + objcode + "</b></i>    " + code[i] + "<br>");
+					lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + objcode + "</b></i>    " + code[i] + "<br>");
 				} else {
 					if (textRecordLength != 10) {
 						if(!opTable.hasItem(ln[0].toLowerCase())){
+							console.info(lineNumberArr[i]);
 							continue;
 						}
 						opCode = opTable.getItem(ln[0].toLowerCase()).opCode;
 						var objcode = generateObjCode(opCode, "0000", false);
 						// console.log(objcode);
 						textRecordArr.push(objcode);
-						lisFile.push("<b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + objcode + "</b></i>    " + code[i] + "<br>");
+						lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + objcode + "</b></i>    " + code[i] + "<br>");
 						textRecordLength++;
 					} else {
 						// POP all results and add it to the OBJFILE.
