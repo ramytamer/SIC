@@ -84,7 +84,9 @@ var dirTable = new HashTable({
 	resw: {},
 	resb: {},
 	byte: {},
-	word: {}
+	word: {},
+	ltorg: {},
+	equ: {}
 });
 
 var symTable = new HashTable({});

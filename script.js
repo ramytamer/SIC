@@ -60,7 +60,8 @@ $(document).ready(function() {
 			}
 
 			interfile.push(lineNumber + "      <b>" + locCtr.toString(16).toUpperCase() + "</b>    " + code[i] + "<br>");
-			locCtrArr[i] = locCtr;
+			locCtrArr[i] =  line[1] && line[1].toLowerCase() == "equ" ? locCtrArr[i-1] : locCtr;
+			// locCtrArr[i] = locCtr;
 			lineNumberArr[i] = lineNumber;
 
 			/*
@@ -79,7 +80,8 @@ $(document).ready(function() {
 					interfile.push("<u><span class='text-danger'> #Error @" + lineNumber + " : label already exists.</span></u><br> ");
 				} else {
 					// Brand new label.
-					symTable.setItem(line[0], locCtr);
+					l = line[1] && line[1].toLowerCase() == "equ" ? locCtrArr[i-1] : locCtr;
+					symTable.setItem(line[0], l);
 				}
 
 
@@ -160,7 +162,8 @@ $(document).ready(function() {
 					locCtr += 3;
 				}else if(line[0] == "*"){
 					symTable.setItem(line[1],locCtr);
-					if(lineNumber == 45){
+					// TO DO : CHECK IF VALID HEX OR NOT
+					if(lineNumber == 42){
 						locCtr += 1;
 					}else
 					locCtr +=3 ;
@@ -330,7 +333,7 @@ $(document).ready(function() {
 					break;
 				}
 
-				if (ln[1].toLowerCase() == "resw" || ln[1].toLowerCase() == "resb") {
+				if (ln[1].toLowerCase() == "resw" || ln[1].toLowerCase() == "resb" || ln[1].toLowerCase() == "equ") {
 					lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>                          " + code[i] + "<br>");
 					if (textRecordStarted) {
 						// POP all results and add it to the OBJFILE.
@@ -420,10 +423,10 @@ $(document).ready(function() {
 						lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + getAsciiHexOfStr(wrd) + "</i></b>    " + code[i] + "<br>");
 						// console.log(getAsciiHexOfStr(wrd));
 					} else if (wrd && ln[2][0].toLowerCase() == "x") {
-						var y = wrd[0].slice(1, wrd[0].length - 1);
-						if (isHex(y)) {
+						var y = wrd.slice(1, wrd.length - 1);
+						if (isHex(wrd)) {
 							textRecordArr.push(wrd);
-							lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + wrd + "</i></b>    " + code[i] + "<br>");
+							lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>          <b><i>" + wrd + "</i></b>    " + code[i] + "<br>");
 							// console.log(wrd);
 						} else {
 							interfile.push("<u><span class='text-danger'> #Error @" + lineNumber + " : not valid hex in byte.</span></u><br> ");
@@ -565,6 +568,24 @@ $(document).ready(function() {
 					lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + objcode + "</b></i>    " + code[i] + "<br>");
 				} else {
 					if (textRecordLength != 10) {
+						if(ln[0]=="*"){
+							var oc = "FFFFFF";
+							if(symTable.hasItem(ln[1])){
+								if(contain(ln[1].toLowerCase(),"=x")){
+									var wrd = ln[1].replace(/=x/gi,"").match(/('[^']+'|-)/g);
+									oc = wrd[0].slice(1, wrd[0].length-1);
+								}else if(contain(ln[1].toLowerCase(),"=c")){
+									var wrd = ln[1].replace(/=x/gi,"").match(/('[^']+'|-)/g);
+									oc = wrd[0].slice(1, wrd[0].length-1);
+									oc = getAsciiHexOfStr(oc);
+								}
+							}else{
+								continue;
+							}
+							lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + oc + "</b></i>    " + code[i] + "<br>");
+							continue;
+						}
+
 						if(!opTable.hasItem(ln[0].toLowerCase())){
 							continue;
 						}

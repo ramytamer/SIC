@@ -20,54 +20,64 @@
 			<div class="row">
 				<div class="col-xs-6">
 					<h3>Write your <i class="fa fa-code"></i> here</h3>
-					<div id="editor" style="height:500px;margin-bottom:5px;">COPY     START   1000
+					<div id="editor" style="height:500px;margin-bottom:5px">TEST     START   1000  
 FIRST    STL     RETADR
-CLOOP    JSUB    RDREC
+CLOOP    JSUB    RDREC 
          LDA     LENGTH
-         COMP    ZERO
+         COMP    ONE   
          JEQ     ENDFIL
-         JSUB    WRREC
-         J       CLOOP
-ENDFIL   LDA     EOF
+         JSUB    WRREC 
+         J       CLOOP 
+ENDFIL   LDA    =C'EOF'
          STA     BUFFER
-         LDA     THREE
+         LDA     THREE 
          STA     LENGTH
-         JSUB    WRREC
+         JSUB    WRREC 
          LDL     RETADR
-         RSUB
-EOF      BYTE    C'EOF'
-THREE    WORD    3
-ZERO     WORD    0
-RETADR   RESW    1
-LENGTH   RESW    1
-BUFFER   RESB    4096
-.
-.   SUBROUTINE TO READ RECORD INTO BUFFER
-.
-RDREC    LDX     ZERO
-         LDA     ZERO
-RLOOP    TD      INPUT
-         JEQ     RLOOP
-         RD      INPUT
-         COMP    ZERO
-         JEQ     EXIT
-         STCH    BUFFER,X
+         RSUB          
+         LTORG         
+*       =C'EOF'        
+THREE    WORD    3     
+ZERO     WORD    0     
+ONE      WORD    1     
+FIVE     WORD    5     
+RETADR   RESW    1     
+LENGTH   RESW    1     
+BUFFER   RESB    4096  
+RDREC    LDX     ZERO  
+         LDA     ZERO  
+RLOOP    TD     =X'F3' 
+         JEQ     RLOOP 
+         RD     =X'F3' 
+         COMP    FIVE  
+         JLT     EXIT  
+         STCH    BUFFER
          TIX     MAXLEN
-         JLT     RLOOP
-EXIT     STX     LENGTH
-         RSUB
-INPUT    BYTE    X'F1'
-MAXLEN   WORD    4096
-WRREC    LDX     ZERO
-WLOOP    TD      OUTPUT
-         JEQ     WLOOP
-         LDCH    BUFFER,X
-         WD      OUTPUT
+         JLT     RLOOP 
+EXIT     STCH    BUFFER
+         STX     LENGTH
+         LDA     LENGTH
+         ADD     ONE   
+         STA     LENGTH
+         RSUB          
+         LTORG         
+*       =X'F3'         
+LEN      WORD    4096  
+MAXLEN   EQU     LEN   
+WRREC    LDX     ZERO  
+WLOOP    TD     =X'06' 
+         JEQ     WLOOP 
+         LDCH    BUFFER
+         WD     =X'06' 
          TIX     LENGTH
-         JLT     WLOOP
-         RSUB
-OUTPUT   BYTE    X'05'
-         END     FIRST</div>
+         JLT     WLOOP 
+         RSUB          
+*       =X'06'         
+         END     FIRST </div>
+					<br>
+					<button class="btn btn-danger btn-block" id="runCode">
+					Click to Run Code or press ( CTRL+ENTER )
+					</button>
 				</div>
 				<div class="col-xs-6">
 					<br><br>
@@ -91,13 +101,6 @@ OUTPUT   BYTE    X'05'
 							</div>
 						</div>
 					</div>
-				</div>
-			</div>
-			<div class="row">
-				<div class="col-xs-6">
-					<button class="btn btn-danger btn-block" id="runCode">
-					Click to Run Code or press ( CTRL+ENTER )
-					</button>
 				</div>
 			</div>
 		</div>
