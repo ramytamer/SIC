@@ -3,6 +3,8 @@ $(document).ready(function() {
 	$('#runCode').click(function() {
 		// Reseting...
 		symTable = new HashTable({});
+		lilTable = new HashTable({});
+		popedLiterals = new HashTable({});
 		var interfile = [];
 		var lisFile = [];
 		var lineNumberArr = [];
@@ -59,10 +61,10 @@ $(document).ready(function() {
 				// continue;
 			}
 
-			interfile.push(lineNumber + "      <b>" + locCtr.toString(16).toUpperCase() + "</b>    " + code[i] + "<br>");
 			locCtrArr[i] =  line[1] && line[1].toLowerCase() == "equ" ? locCtrArr[i-1] : locCtr;
 			// locCtrArr[i] = locCtr;
 			lineNumberArr[i] = lineNumber;
+			interfile.push(lineNumber + "      <b>" + locCtrArr[i].toString(16).toUpperCase() + "</b>    " + code[i] + "<br>");
 
 			/*
 			Assume there is always less than 3 parts.
@@ -89,6 +91,38 @@ $(document).ready(function() {
 				if (opTable.hasItem(line[1].toLowerCase())) { // search for it in opTable.
 					// Increment the locCtr.
 					locCtr += 3;
+
+					// console.log(lineNumber, line[2] && line[2][0]=="=");
+
+					// Handling literals
+					if(line[2] && line[2][0]=="="){
+						var lilValue = false;
+						if(contain(line[2].toLowerCase(),"=c")){
+							// if =C'EOF'
+							lilValue = getAsciiHexOfStr( line[2].slice(3,line[2].length-1));
+							if(!lilValue.length){
+								interfile.push("<u><span class='text-danger'> #Error @" + lineNumber + " : not valid value in literal.</span></u><br> ");
+							}
+						}else if(contain(line[2].toLowerCase(), "=x")){
+							// if =X'F2'
+							var xv = line[2].slice(3, line[2].length-1);
+							if(isHex(xv)){
+								lilValue = xv;
+							}else{
+								// Error not valid hex in literal
+								interfile.push("<u><span class='text-danger'> #Error @" + lineNumber + " : not valid hex in literal.</span></u><br> ");
+							}
+						}else if (isHex(line[2].slice(1))){
+							// if =5
+							lilValue = line[2].slice(1);
+						}else if(line[2].slice(1) == "*"){
+							lilValue = locCtrArr[i]; // current location counter
+						}else{
+							// ERROR not valid literal
+							interfile.push("<u><span class='text-danger'> #Error @" + lineNumber + " : not valid literal.</span></u><br> ");
+						}
+						if(!lilTable.hasItem(hexToDecimal(lilValue))) lilTable.setItem(hexToDecimal(lilValue),line[2]);
+					}
 				} else if (dirTable.hasItem(line[1].toLowerCase())) { // search for it in dirTable.
 					switch (line[1].toLowerCase()) {
 						case 'word':
@@ -131,9 +165,6 @@ $(document).ready(function() {
 								locCtr += 3 * parseInt(line[2], 10);
 							}
 							break;
-						case 'equ':
-							// locCtr -= 3;
-							break;
 						case 'end':
 							if (symTable.hasItem(line[2]) || !line[2].length) {
 								EOP = true;
@@ -150,6 +181,35 @@ $(document).ready(function() {
 				// Line[0] ---> MNEMONIC
 				if (opTable.hasItem(line[0].toLowerCase())) {
 					locCtr += 3;
+
+					// Handling literals
+					if(line[1] && line[1][0]=="="){
+						var lilValue = false;
+						if(contain(line[1].toLowerCase(),"=c")){
+							// if =C'EOF'
+							lilValue = getAsciiHexOfStr( line[1].slice(3,line[1].length-1));
+							if(!lilValue.length){
+								interfile.push("<u><span class='text-danger'> #Error @" + lineNumber + " : not valid value in literal.</span></u><br> ");
+							}
+						}else if(contain(line[1].toLowerCase(), "=x")){
+							// if =X'F2'
+							var xv = line[1].slice(3, line[1].length-1);
+							if(isHex(xv)){
+								lilValue = xv;
+							}else{
+								// Error not valid hex in literal
+								interfile.push("<u><span class='text-danger'> #Error @" + lineNumber + " : not valid hex in literal.</span></u><br> ");
+							}
+						}else if (isHex(line[1].slice(1))){
+							// if =5
+							lilValue = line[1].slice(1);
+						}else if(line[1].slice(1) == "*"){
+							lilValue = locCtrArr[i]; // current location counter
+						}else{
+							interfile.push("<u><span class='text-danger'> #Error @" + lineNumber + " : not valid literal.</span></u><br> ");
+						}
+						if(!lilTable.hasItem(hexToDecimal(lilValue))) lilTable.setItem(hexToDecimal(lilValue),line[1]);
+					}
 				} else if (dirTable.hasItem(line[0].toLowerCase())) {
 					if (line[0].toLowerCase() == "end") {
 						if (line[1].length && !symTable.hasItem(line[1])) {
@@ -159,12 +219,22 @@ $(document).ready(function() {
 							locCtr -= 3;
 						}
 					}
-					locCtr += 3;
+
+					if(line[1].toLowerCase() == "ltorg" || EOP){
+						lilTable.each(function(k, v) {
+							if(!popedLiterals.getItem(k)){
+								interfile.push("            <b>" + decimalToHex(locCtrArr[i]) + "</b>    *         " + v + "<br>");
+								locCtr+= decimalToHex(parseInt(k,10)).toString().length/2 ;
+								popedLiterals.setItem(k,v);
+							}
+						});
+					}
+					locCtr +=3;
 				}else if(line[0] == "*"){
-					symTable.setItem(line[1],locCtr);
+					// symTable.setItem(line[1],locCtr);
 					// TO DO : CHECK IF VALID HEX OR NOT
 					if(lineNumber == 42){
-						locCtr += 1;
+						// locCtr += 1;
 					}else
 					locCtr +=3 ;
 				} else {
@@ -179,6 +249,15 @@ $(document).ready(function() {
 				} else if (dirTable.hasItem(line[0].toLowerCase())) {
 					if (line[0].toLowerCase() == "end") {
 						EOP = true;
+					}
+					if(line[0].toLowerCase() == "ltorg" || EOP){
+						lilTable.each(function(k, v) {
+							if(!popedLiterals.getItem(k)){
+								interfile.push("            <b>" + decimalToHex(locCtr) + "</b>    *         " + v + "<br>");
+								locCtr+= decimalToHex(parseInt(k,10)).toString().length/2 ;
+								popedLiterals.setItem(k,v);
+							}
+						});
 					}
 				} else {
 					// #Error : not valid MNEMONIC.

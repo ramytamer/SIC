@@ -36,7 +36,7 @@ ENDFIL   LDA    =C'EOF'
          LDL     RETADR
          RSUB          
          LTORG         
-*       =C'EOF'        
+. *       =C'EOF'        
 THREE    WORD    3     
 ZERO     WORD    0     
 ONE      WORD    1     
@@ -61,7 +61,7 @@ EXIT     STCH    BUFFER
          STA     LENGTH
          RSUB          
          LTORG         
-*       =X'F3'         
+. *       =X'F3'         
 LEN      WORD    4096  
 MAXLEN   EQU     LEN   
 WRREC    LDX     ZERO  
@@ -72,8 +72,8 @@ WLOOP    TD     =X'06'
          TIX     LENGTH
          JLT     WLOOP 
          RSUB          
-*       =X'06'         
-         END     FIRST </div>
+         END     FIRST 
+. *       =X'06'         </div>
 					<br>
 					<button class="btn btn-danger btn-block" id="runCode">
 					Click to Run Code or press ( CTRL+ENTER )

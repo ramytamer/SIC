@@ -1,0 +1,54 @@
+1000        TEST     START   1000  
+1000 141039 FIRST    STL     RETADR
+1003 48203F CLOOP    JSUB    RDREC 
+1006 00103C          LDA     LENGTH
+1009 281033          COMP    ONE   
+100C 301015          JEQ     ENDFIL
+100F 482073          JSUB    WRREC 
+1012 3C1003          J       CLOOP 
+1015 00102A ENDFIL   LDA    =C'EOF'
+1018 0C103F          STA     BUFFER
+101B 00102D          LDA     THREE 
+101E 0C103C          STA     LENGTH
+1021 482073          JSUB    WRREC 
+1024 081039          LDL     RETADR
+1027 4C0000          RSUB          
+102A                 LTORG         
+102A 454F46 *       =C'EOF'        
+102D 000003 THREE    WORD    3     
+1030 000000 ZERO     WORD    0     
+1033 000001 ONE      WORD    1     
+1036 000005 FIVE     WORD    5     
+1039        RETADR   RESW    1     
+103C        LENGTH   RESW    1     
+103F        BUFFER   RESB    4096  
+203F 041030 RDREC    LDX     ZERO  
+2042 001030          LDA     ZERO  
+2045 E0206F RLOOP    TD     =X'F3' 
+2048 302045          JEQ     RLOOP 
+204B D8206F          RD     =X'F3' 
+204E 281036          COMP    FIVE  
+2051 38205D          JLT     EXIT  
+2054 54103F          STCH    BUFFER
+2057 2C2070          TIX     MAXLEN
+205A 382045          JLT     RLOOP 
+205D 54103F EXIT     STCH    BUFFER
+2060 10103C          STX     LENGTH
+2063 00103C          LDA     LENGTH
+2066 181033          ADD     ONE   
+2069 0C103C          STA     LENGTH
+206C 4C0000          RSUB          
+206F                 LTORG         
+206F F3     *       =X'F3'         
+2070 001000 LEN      WORD    4096  
+2070        MAXLEN   EQU     LEN   
+2073 041030 WRREC    LDX     ZERO  
+2076 E0208B WLOOP    TD     =X'06' 
+2079 302076          JEQ     WLOOP 
+207C 50103F          LDCH    BUFFER
+207F DC208B          WD     =X'06' 
+2082 2C103C          TIX     LENGTH
+2085 382076          JLT     WLOOP 
+2088 4C0000          RSUB          
+                     END     FIRST 
+208B 06     *       =X'06'         
