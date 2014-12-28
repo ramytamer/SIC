@@ -5,6 +5,8 @@ $(document).ready(function() {
 		symTable = new HashTable({});
 		lilTable = new HashTable({});
 		popedLiterals = new HashTable({});
+		objectLiterals = new HashTable({});
+		foundLiterals = new HashTable({});
 		var interfile = [];
 		var lisFile = [];
 		var lineNumberArr = [];
@@ -106,7 +108,7 @@ $(document).ready(function() {
 						}else if(contain(line[2].toLowerCase(), "=x")){
 							// if =X'F2'
 							var xv = line[2].slice(3, line[2].length-1);
-							if(isHex(xv)){
+							if(isHex(xv) && xv.length%2==0){
 								lilValue = xv;
 							}else{
 								// Error not valid hex in literal
@@ -121,7 +123,7 @@ $(document).ready(function() {
 							// ERROR not valid literal
 							interfile.push("<u><span class='text-danger'> #Error @" + lineNumber + " : not valid literal.</span></u><br> ");
 						}
-						if(!lilTable.hasItem(hexToDecimal(lilValue))) lilTable.setItem(hexToDecimal(lilValue),line[2]);
+						if(!lilTable.hasItem(line[2])) lilTable.setItem(line[2],hexToDecimal(lilValue).toString());
 					}
 				} else if (dirTable.hasItem(line[1].toLowerCase())) { // search for it in dirTable.
 					switch (line[1].toLowerCase()) {
@@ -194,7 +196,7 @@ $(document).ready(function() {
 						}else if(contain(line[1].toLowerCase(), "=x")){
 							// if =X'F2'
 							var xv = line[1].slice(3, line[1].length-1);
-							if(isHex(xv)){
+							if(isHex(xv) && xv.length%2==0){
 								lilValue = xv;
 							}else{
 								// Error not valid hex in literal
@@ -208,7 +210,7 @@ $(document).ready(function() {
 						}else{
 							interfile.push("<u><span class='text-danger'> #Error @" + lineNumber + " : not valid literal.</span></u><br> ");
 						}
-						if(!lilTable.hasItem(hexToDecimal(lilValue))) lilTable.setItem(hexToDecimal(lilValue),line[1]);
+						if(!lilTable.hasItem(line[1])) lilTable.setItem(line[1],hexToDecimal(lilValue).toString());
 					}
 				} else if (dirTable.hasItem(line[0].toLowerCase())) {
 					if (line[0].toLowerCase() == "end") {
@@ -223,9 +225,10 @@ $(document).ready(function() {
 					if(line[1].toLowerCase() == "ltorg" || EOP){
 						lilTable.each(function(k, v) {
 							if(!popedLiterals.getItem(k)){
-								interfile.push("            <b>" + decimalToHex(locCtrArr[i]) + "</b>    *         " + v + "<br>");
-								locCtr+= decimalToHex(parseInt(k,10)).toString().length/2 ;
+								interfile.push("            <b>" + decimalToHex(locCtrArr[i]) + "</b>    *         " + k.toString() + "<br>");
+								locCtr+= decimalToHex(parseInt(v,10)).toString().length/2 ;
 								popedLiterals.setItem(k,v);
+								objectLiterals.setItem(k.toString()	,locCtrArr[i]);
 							}
 						});
 					}
@@ -253,9 +256,10 @@ $(document).ready(function() {
 					if(line[0].toLowerCase() == "ltorg" || EOP){
 						lilTable.each(function(k, v) {
 							if(!popedLiterals.getItem(k)){
-								interfile.push("            <b>" + decimalToHex(locCtr) + "</b>    *         " + v + "<br>");
-								locCtr+= decimalToHex(parseInt(k,10)).toString().length/2 ;
+								interfile.push("            <b>" + decimalToHex(locCtr) + "</b>    *         " + k.toString() + "<br>");
+								locCtr+= decimalToHex(parseInt(v,10)).toString().length/2 ;
 								popedLiterals.setItem(k,v);
+								objectLiterals.setItem(k.toString()	,locCtrArr[i]);
 							}
 						});
 					}
@@ -311,6 +315,7 @@ $(document).ready(function() {
 		///////////////////////
 
 		var OBJFILE = ""; // Reset the OBJFILE variable.
+		popedLiterals = new HashTable({});
 
 		// Get the length of the program.
 		progLength = locCtr - progStart;
@@ -327,6 +332,7 @@ $(document).ready(function() {
 		var spaces = 6 - programName.length;
 		if (spaces < 0) {
 			// #Error : program name is too long
+			alert("Program name is too long!");
 		} else {
 			for (i = 0; i < spaces; i++) {
 				OBJFILE += " ";
@@ -337,6 +343,7 @@ $(document).ready(function() {
 		progStartX16 = paddZeros(progStartX16, 6);
 		if (!progStartX16) {
 			// #Error: long program start.
+			alert("Long Program Start");
 		}
 
 		// Add the edited start program to the OBJFILE.
@@ -346,6 +353,7 @@ $(document).ready(function() {
 		progLengthX16 = paddZeros(progLengthX16, 6);
 		if (!progLengthX16) {
 			// #Error: program length is too long.
+			alert("program length is too long");
 		}
 
 		// Add the edited program length to the OBJFILE.
@@ -390,7 +398,18 @@ $(document).ready(function() {
 
 				if (ln[0].toLowerCase() == "end") {
 					// console.info("last");
-					// lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>                          " + code[i] + "<br>");
+					lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>                          " + code[i] + "<br>");
+
+					foundLiterals.each(function(k, v) {
+						var objcode = decimalToHex(parseInt(lilTable.getItem(k),10));
+						if(objcode.toString().length < 2) objcode = paddZeros(objcode,2);
+						var locA = decimalToHex(parseInt(objectLiterals.getItem(k),10));
+						lisFile.push("            <b>" + locA + "</b>    <b><i>"+objcode+"</i></b>            *         " + k.toString() + "<br>");
+						textRecordLength++;
+						textRecordArr.push(objcode);
+					});
+					foundLiterals.clear();
+
 					var textRecordLength = 0;
 					for (o = 0; o < textRecordArr.length; o++) {
 						for (k = 0; k < textRecordArr[o].length; k++) {
@@ -411,6 +430,20 @@ $(document).ready(function() {
 					endAddress = symTable.getItem(ln[1]);
 					break;
 				}
+
+				if(ln[1].toLowerCase() == "ltorg" ){
+					lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>                          " + code[i] + "<br>");
+					foundLiterals.each(function(k, v) {
+						var objcode = decimalToHex(parseInt(lilTable.getItem(k),10));
+						if(objcode.toString().length < 2) objcode = paddZeros(objcode,2);
+						var locA = decimalToHex(parseInt(objectLiterals.getItem(k),10));
+						lisFile.push("            <b>" + locA + "</b>    <b><i>"+objcode+"</i></b>            *         " + k.toString() + "<br>");
+						textRecordLength++;
+						textRecordArr.push(objcode);
+					});
+					foundLiterals.clear();
+				}
+
 
 				if (ln[1].toLowerCase() == "resw" || ln[1].toLowerCase() == "resb" || ln[1].toLowerCase() == "equ") {
 					lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>                          " + code[i] + "<br>");
@@ -516,6 +549,12 @@ $(document).ready(function() {
 					continue;
 				}
 
+				// If is literal included in operand
+				if(ln[2][0]=="="){
+					if(!foundLiterals.hasItem(ln[2])){
+						foundLiterals.setItem(ln[2],locCtrArr[i]);
+					}
+				}
 
 				// if not start (regular instruction)
 
@@ -537,10 +576,11 @@ $(document).ready(function() {
 					lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + objcode + "</b></i>    " + code[i] + "<br>");
 				} else {
 					if (textRecordLength != 10) {
-						if(!opTable.hasItem(ln[1].toLowerCase()) || !symTable.hasItem(ln[2])){
+						if(!opTable.hasItem(ln[1].toLowerCase()) || (ln[2] && ln[2][0]!="=" && !symTable.hasItem(ln[2]))){
 							continue;
 						}
 						opCode = opTable.getItem(ln[1].toLowerCase()).opCode;
+						if(ln[2][0] != "=")
 						oprand = symTable.getItem(ln[2]).toString(16).toUpperCase();
 						var objcode = generateObjCode(opCode, oprand, isIndexRelative(ln[2]));
 						// console.log(objcode);
@@ -581,7 +621,18 @@ $(document).ready(function() {
 
 				if (ln[0].toLowerCase() == "end") {
 					// console.info(locCtrArr[i], i);
-					 lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>                          " + code[i] + "<br>");
+					lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>                          " + code[i] + "<br>");
+
+					foundLiterals.each(function(k, v) {
+						var objcode = decimalToHex(parseInt(lilTable.getItem(k),10));
+						if(objcode.toString().length < 2) objcode = paddZeros(objcode,2);
+						var locA = decimalToHex(parseInt(objectLiterals.getItem(k),10));
+						lisFile.push("            <b>" + locA + "</b>    <b><i>"+objcode+"</i></b>            *         " + k.toString() + "<br>");
+						textRecordLength++;
+						textRecordArr.push(objcode);
+					});
+					foundLiterals.clear();
+
 					var textRecordLength = 0;
 					for (o = 0; o < textRecordArr.length; o++) {
 						for (k = 0; k < textRecordArr[o].length; k++) {
@@ -601,6 +652,26 @@ $(document).ready(function() {
 
 					endAddress = symTable.getItem(ln[1]);
 					break;
+				}
+
+				if(ln[1].toLowerCase() == "ltorg" ){
+					lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>                          " + code[i] + "<br>");
+					foundLiterals.each(function(k, v) {
+						var objcode = decimalToHex(parseInt(lilTable.getItem(k),10));
+						if(objcode.toString().length < 2) objcode = paddZeros(objcode,2);
+						var locA = decimalToHex(parseInt(objectLiterals.getItem(k),10));
+						lisFile.push("            <b>" + locA + "</b>    <b><i>"+objcode+"</i></b>            *         " + k.toString() + "<br>");
+						textRecordLength++;
+						textRecordArr.push(objcode);
+					});
+					foundLiterals.clear();
+				}
+
+				// If is literal included in operand
+				if(ln[1][0]=="="){
+					if(!foundLiterals.hasItem(ln[1])){
+						foundLiterals.setItem(ln[1],locCtrArr[i]);
+					}
 				}
 
 				if (ln[0].toLowerCase() == "resw" || ln[0].toLowerCase() == "resb") {
@@ -725,6 +796,17 @@ $(document).ready(function() {
 			} else if (ln.length == 1) {
 				if (ln[0].toLowerCase() == "end") {
 					lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>                          " + code[i] + "<br>");
+
+					foundLiterals.each(function(k, v) {
+						var objcode = decimalToHex(parseInt(lilTable.getItem(k),10));
+						if(objcode.toString().length < 2) objcode = paddZeros(objcode,2);
+						var locA = decimalToHex(parseInt(objectLiterals.getItem(k),10));
+						lisFile.push("            <b>" + locA + "</b>    <b><i>"+objcode+"</i></b>            *         " + k.toString() + "<br>");
+						textRecordLength++;
+						textRecordArr.push(objcode);
+					});
+					foundLiterals.clear();
+
 					var textRecordLength = 0;
 					for (o = 0; o < textRecordArr.length; o++) {
 						for (k = 0; k < textRecordArr[o].length; k++) {
@@ -747,11 +829,19 @@ $(document).ready(function() {
 					break;
 				}
 
-				if(ln[0].toLowerCase() == "ltorg"){
-					// Mo2akatn
+				if(ln[0].toLowerCase() == "ltorg" ){
 					lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>                          " + code[i] + "<br>");
-					continue;
+					foundLiterals.each(function(k, v) {
+						var objcode = decimalToHex(parseInt(lilTable.getItem(k),10));
+						if(objcode.toString().length < 2) objcode = paddZeros(objcode,2);
+						var locA = decimalToHex(parseInt(objectLiterals.getItem(k),10));
+						lisFile.push("            <b>" + locA + "</b>    <b><i>"+objcode+"</i></b>            *         " + k.toString() + "<br>");
+						textRecordLength++;
+						textRecordArr.push(objcode);
+					});
+					foundLiterals.clear();
 				}
+
 
 				// If not started record, begin a new one
 				if (!textRecordStarted) {
@@ -771,7 +861,7 @@ $(document).ready(function() {
 				} else {
 					if (textRecordLength != 10) {
 						if(!opTable.hasItem(ln[0].toLowerCase())){
-							console.info(lineNumberArr[i]);
+							// console.info(lineNumberArr[i]);
 							continue;
 						}
 						opCode = opTable.getItem(ln[0].toLowerCase()).opCode;
