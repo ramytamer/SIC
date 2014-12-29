@@ -118,7 +118,7 @@ $(document).ready(function() {
 							// if =5
 							lilValue = line[2].slice(1);
 						}else if(line[2].slice(1) == "*"){
-							lilValue = locCtrArr[i]; // current location counter
+							lilValue = decimalToHex(locCtrArr[i]); // current location counter
 						}else{
 							// ERROR not valid literal
 							interfile.push("<u><span class='text-danger'> #Error @" + lineNumber + " : not valid literal.</span></u><br> ");
@@ -206,7 +206,7 @@ $(document).ready(function() {
 							// if =5
 							lilValue = line[1].slice(1);
 						}else if(line[1].slice(1) == "*"){
-							lilValue = locCtrArr[i]; // current location counter
+							lilValue = decimalToHex(locCtrArr[i]); // current location counter
 						}else{
 							interfile.push("<u><span class='text-danger'> #Error @" + lineNumber + " : not valid literal.</span></u><br> ");
 						}
@@ -718,22 +718,9 @@ $(document).ready(function() {
 					lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + objcode + "</b></i>    " + code[i] + "<br>");
 				} else {
 					if (textRecordLength != 10) {
-						if(ln[0]=="*"){
-							var oc = "FFFFFF";
-							if(symTable.hasItem(ln[1])){
-								if(contain(ln[1].toLowerCase(),"=x")){
-									var wrd = ln[1].replace(/=x/gi,"").match(/('[^']+'|-)/g);
-									oc = wrd[0].slice(1, wrd[0].length-1);
-								}else if(contain(ln[1].toLowerCase(),"=c")){
-									var wrd = ln[1].replace(/=x/gi,"").match(/('[^']+'|-)/g);
-									oc = wrd[0].slice(1, wrd[0].length-1);
-									oc = getAsciiHexOfStr(oc);
-								}
-							}else{
-								continue;
-							}
+						console.info(lineNumberArr[i]);
 							lisFile.push(lineNumberArr[i] + "      <b>" + decimalToHex(locCtrArr[i]) + "</b>    <b><i>" + oc + "</b></i>    " + code[i] + "<br>");
-							continue;
+							// continue;
 						}
 
 						if(!opTable.hasItem(ln[0].toLowerCase())){
